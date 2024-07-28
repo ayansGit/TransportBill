@@ -2,6 +2,7 @@ import {StyleSheet, Text, View} from 'react-native';
 import React from 'react';
 import {screens} from '../../constants';
 import Background from '../../components/Background';
+import VehicleItem from './VehicleItem';
 
 const Vehicles = ({navigation}) => {
   const onVehicleAdd = () => {
@@ -9,9 +10,7 @@ const Vehicles = ({navigation}) => {
   };
   return (
     <Background onAdd={onVehicleAdd}>
-      <View>
-        <Text>Vehicles</Text>
-      </View>
+      <VehicleItem/>
     </Background>
   );
 };

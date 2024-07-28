@@ -45,9 +45,13 @@ export const postRequest = async (
     let connection = await NetInfo.fetch();
     if (connection.isConnected) {
       try {
-        let response = await axios.post(`${BASE_URL.ADMIN}/${endpoint}`, param, {
-          headers: header,
-        });
+        let response = await axios.post(
+          `${BASE_URL.ADMIN}/${endpoint}`,
+          param,
+          {
+            headers: header,
+          },
+        );
         let responseData = await response.data;
         console.log('RESPONSE', responseData);
         resolve(responseData);
@@ -86,4 +90,34 @@ export const getAnyRequest = async (
   } else {
     throw {status: 500, message: `No internet connection`};
   }
+};
+
+export const postAnyRequest = async (
+  url,
+  param,
+  header = {'Content-Type': 'application/json'},
+) => {
+  return new Promise(async (resolve, reject) => {
+    console.log('url', `${url}`);
+    console.log('Param', param);
+    console.log('header', JSON.stringify(header));
+    let connection = await NetInfo.fetch();
+    if (connection.isConnected) {
+      try {
+        let response = await axios.post(url, param, {
+          headers: header,
+        });
+        let responseData = await response.data;
+        console.log('RESPONSE', responseData);
+        resolve(responseData);
+      } catch (error) {
+        console.log('ERROR', error);
+        if (error?.response?.status == 401)
+          reject({status: 401, message: `${error.response.message}`});
+        else reject({status: 500, message: `Something went wrong`});
+      }
+    } else {
+      reject({status: 500, message: `No internet connection`});
+    }
+  });
 };
