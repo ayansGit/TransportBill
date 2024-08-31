@@ -1,18 +1,20 @@
 import {StyleSheet, Text, View, FlatList} from 'react-native';
 import React from 'react';
-import VehicleItem from './VehicleItem';
+import ReportItem from './ReportItem';
 
-const VehicleList = ({data = [], onItemSelected}) => {
+const ReportList = ({data = [], onItemSelected}) => {
   return (
     <View>
       <FlatList
         data={data}
         renderItem={({item}) => {
           return (
-            <VehicleItem
-              vehicleNumber={item?.vehicle_number}
-              rnNumber={item?.rc_number}
-              validUpto={item?.validupto}
+            <ReportItem
+              vehicleNumber={item?.vehicle_name}
+              time={item?.time}
+              fromLocation={item?.from_location_name}
+              toLocation={item?.to_location_name}
+              status={item?.status}
               onItemSelected={() => onItemSelected && onItemSelected(item)}
             />
           );
@@ -22,6 +24,6 @@ const VehicleList = ({data = [], onItemSelected}) => {
   );
 };
 
-export default VehicleList;
+export default ReportList;
 
 const styles = StyleSheet.create({});

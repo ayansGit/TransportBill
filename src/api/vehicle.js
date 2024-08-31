@@ -1,4 +1,4 @@
-import {getRequest} from './apiRequest';
+import {getRequest, postRequest} from './apiRequest';
 
 export const getVehicles = async () => {
   const header = {

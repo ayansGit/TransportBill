@@ -3,63 +3,93 @@ import React from 'react';
 import {colors} from '../../theme/colors';
 import {Icons} from '../../assets';
 
-const VehicleItem = ({vehicleNumber, rnNumber, validUpto, onItemSelected}) => {
+const ReportItem = ({
+  time,
+  vehicleNumber,
+  fromLocation,
+  toLocation,
+  status,
+  onItemSelected,
+}) => {
   return (
     <TouchableOpacity style={styles.container} onPress={onItemSelected}>
-      <Icons.Vehicle color={colors.lightGrey} marginTop={5} />
+      <View style={{width: '20%'}}>
+        <Text style={{fontWeight: 'bold', fontSize: 10, color: colors.text}}>
+          Time
+        </Text>
+        <Text style={{fontSize: 12, marginTop: 5, color: colors.text}}>
+          {time}
+        </Text>
+      </View>
       <View
         style={{
-          height: 40,
+          height: '80%',
           width: 1,
-          marginHorizontal: 10,
+          marginHorizontal: 5,
           backgroundColor: colors.lightGrey,
         }}
       />
-      <View style={{alignItems: 'center'}}>
+      {/* <View style={{width: '15%'}}>
         <Text style={{fontWeight: 'bold', fontSize: 10, color: colors.text}}>
           Vehicle No
         </Text>
         <Text style={{fontSize: 12, marginTop: 5, color: colors.text}}>
           {vehicleNumber}
         </Text>
+      </View> */}
+      {/* <View
+        style={{
+          height: '80%',
+          width: 1,
+          marginHorizontal: 5,
+          backgroundColor: colors.lightGrey,
+        }}
+      /> */}
+      <View style={{width: '30%'}}>
+        <Text style={{fontWeight: 'bold', fontSize: 10, color: colors.text}}>
+          From Location
+        </Text>
+        <Text style={{fontSize: 12, marginTop: 5, color: colors.text}}>
+          {fromLocation}
+        </Text>
       </View>
       <View
         style={{
-          height: 40,
+          height: '80%',
           width: 1,
-          marginHorizontal: 10,
+          marginHorizontal: 5,
           backgroundColor: colors.lightGrey,
         }}
       />
-      <View style={{alignItems: 'center'}}>
+      <View style={{width: '30%'}}>
         <Text style={{fontWeight: 'bold', fontSize: 10, color: colors.text}}>
-          RC Number
+          To Location
         </Text>
         <Text style={{fontSize: 12, marginTop: 5, color: colors.text}}>
-          {rnNumber}
+          {toLocation}
         </Text>
       </View>
       <View
         style={{
-          height: 40,
+          height: '80%',
           width: 1,
-          marginHorizontal: 10,
+          marginHorizontal: 5,
           backgroundColor: colors.lightGrey,
         }}
       />
-      <View style={{alignItems: 'center'}}>
+      <View style={{width: '10%'}}>
         <Text style={{fontWeight: 'bold', fontSize: 10, color: colors.text}}>
-          Valid Upto
+          Status
         </Text>
         <Text style={{fontSize: 12, marginTop: 5, color: colors.text}}>
-          {validUpto}
+          {status}
         </Text>
       </View>
     </TouchableOpacity>
   );
 };
 
-export default VehicleItem;
+export default ReportItem;
 
 const styles = StyleSheet.create({
   container: {
@@ -71,7 +101,7 @@ const styles = StyleSheet.create({
     shadowOffset: {height: 0, width: 0},
     borderRadius: 10,
     alignItems: 'center',
-    justifyContent: 'space-around',
+    justifyContent: 'space-between',
     marginVertical: 10,
     marginHorizontal: 10,
     padding: 10,
