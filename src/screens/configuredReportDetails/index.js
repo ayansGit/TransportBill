@@ -14,6 +14,7 @@ import Background from '../../components/Background';
 import {getConfiguredReportList, getReportList} from '../../api';
 import {colors} from '../../theme/colors';
 import RNHTMLtoPDF from 'react-native-html-to-pdf';
+import DownloadButton from '../../components/DownloadButton';
 
 const ConfiguredReportDetails = ({navigation, route}) => {
   const vehicleId = route?.params?.vehicleId;
@@ -123,6 +124,7 @@ const ConfiguredReportDetails = ({navigation, route}) => {
   };
 
   const handleGetReportList = async () => {
+    setLoading(true);
     try {
       const response = await getConfiguredReportList(
         vehicleId,
@@ -134,6 +136,7 @@ const ConfiguredReportDetails = ({navigation, route}) => {
     } catch (error) {
       console.log(error);
     }
+    setLoading(false);
   };
 
   const downloadReport = async () => {
@@ -142,7 +145,7 @@ const ConfiguredReportDetails = ({navigation, route}) => {
       const html = getHTML();
       const options = {
         html,
-        fileName: `Tracking Report ${reportList[0]?.time}`,
+        fileName: `Tracking Report ${new Date().getTime()}`,
         directory: 'Transport Bill',
       };
       const file = await RNHTMLtoPDF.convert(options);
@@ -156,22 +159,21 @@ const ConfiguredReportDetails = ({navigation, route}) => {
 
   return (
     <Background loading={loading}>
-      <TouchableOpacity
-        style={{
-          alignSelf: 'flex-end',
-          marginRight: 10,
-          marginVertical: 10,
-          marginTop: 15,
-          padding: 5,
-          borderWidth: 1,
-          borderRadius: 5,
-          borderColor: colors.main,
-        }}
-        onPress={downloadReport}>
-        <Text style={{fontSize: 14, fontWeight: 'bold', color: colors.main}}>
-          Download
+      {reportList.length > 0 && <DownloadButton onPress={downloadReport} />}
+
+      {!loading && reportList.length === 0 && (
+        <Text
+          style={{
+            fontSize: 20,
+            fontWeight: 'bold',
+            color: colors.lightGrey,
+            alignSelf: 'center',
+            marginTop: 40,
+          }}>
+          Empty Report
         </Text>
-      </TouchableOpacity>
+      )}
+
       <ReportList data={reportList} />
     </Background>
   );

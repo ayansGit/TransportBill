@@ -42,6 +42,7 @@ const AddTollModal = ({visible = false, onClose, onAddTollTax}) => {
             <Input
               label="Toll Tax"
               placeholder="Enter toll tax"
+              isNumber
               onChangeText={setTollTax}
             />
 

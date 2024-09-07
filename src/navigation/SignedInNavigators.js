@@ -9,6 +9,7 @@ import ReportDetails from '../screens/reportDetails';
 import ConfigureReport from '../screens/fakeReport';
 import ConfiguredReportDetails from '../screens/configuredReportDetails';
 import TollDetail from '../screens/tollDetails';
+import PreviewBill from '../screens/previewBill';
 
 const Stack = createNativeStackNavigator();
 
@@ -30,6 +31,7 @@ export default function SignedInNavigator() {
         component={ConfiguredReportDetails}
       />
       <Stack.Screen name="Update Toll" component={TollDetail} />
+      <Stack.Screen name="Preview Bill" component={PreviewBill} />
     </Stack.Navigator>
   );
 }

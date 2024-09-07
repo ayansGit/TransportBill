@@ -96,3 +96,21 @@ export const getTrackingTime = async () => {
   }
   return '';
 };
+
+export const setDLNumber = async value => {
+  try {
+    await AsyncStorage.setItem('transportbill.dl.no', value);
+  } catch (error) {
+    console.log(error);
+  }
+};
+
+export const getDLNumber = async () => {
+  try {
+    let value = await AsyncStorage.getItem('transportbill.dl.no');
+    return value;
+  } catch (error) {
+    console.log(error);
+  }
+  return '';
+};

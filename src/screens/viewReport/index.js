@@ -2,12 +2,13 @@ import {StyleSheet, Text, View} from 'react-native';
 import React, {useState, useEffect} from 'react';
 import {useIsFocused} from '@react-navigation/native';
 import Background from '../../components/Background';
-import DropDownPicker from 'react-native-dropdown-picker';
+import {Dropdown} from 'react-native-element-dropdown';
 import {colors} from '../../theme/colors';
 import Button from '../../components/Button';
 import Input from '../../components/Input';
 import {screens} from '../../constants';
 import {getVehicles} from '../../api';
+import DateTimeField from '../../components/DateTimeField';
 
 const ViewReport = ({navigation}) => {
   const [vehicleOpen, setVehicleOpen] = useState(false);
@@ -56,20 +57,35 @@ const ViewReport = ({navigation}) => {
           }}>
           Vehicle
         </Text>
-        <DropDownPicker
-          open={vehicleOpen}
+
+        <Dropdown
+          style={{
+            height: 50,
+            borderColor: colors.lightGrey,
+            borderWidth: 0.5,
+            borderRadius: 8,
+            paddingHorizontal: 8,
+            marginTop: 10,
+          }}
+          maxHeight={300}
+          labelField="label"
+          valueField="value"
+          searchPlaceholder="Search..."
+          search
           value={vehicle}
-          items={vehicleList}
-          setOpen={setVehicleOpen}
-          setValue={setVehicle}
-          style={{marginTop: 10}}
+          data={vehicleList}
+          onFocus={() => setVehicleOpen(true)}
+          onBlur={() => setVehicleOpen(false)}
+          onChange={item => {
+            setVehicle(item.value);
+            setVehicleOpen(false);
+          }}
         />
 
-        <Input
-          label="Tracking Date (yyyy-mm-dd)"
-          placeholder="Enter date in yyyy-mm-dd format"
-          value={trackingTime}
-          onChangeText={setTrackingTime}
+        <DateTimeField
+          label={'Tracking Date'}
+          placeholder={'Select Date'}
+          onChange={setTrackingTime}
         />
 
         <Button style={{marginTop: 40}} title={'SUBMIT'} onPress={showReport} />

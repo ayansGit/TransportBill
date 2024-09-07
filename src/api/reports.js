@@ -21,7 +21,7 @@ export const getConfiguredReportList = async (
     time: time,
   };
   return await postAnyRequest(
-    'https://transportbill.pdttech.in/api/driver/admin/report/store',
+    'https://transportbill.pdttech.in/api/admin/report/store',
     request,
   );
 };

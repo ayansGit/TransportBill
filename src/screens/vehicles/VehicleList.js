@@ -4,7 +4,7 @@ import VehicleItem from './VehicleItem';
 
 const VehicleList = ({data = [], onItemSelected}) => {
   return (
-    <View>
+    <View style={styles.container}>
       <FlatList
         data={data}
         renderItem={({item}) => {
@@ -24,4 +24,6 @@ const VehicleList = ({data = [], onItemSelected}) => {
 
 export default VehicleList;
 
-const styles = StyleSheet.create({});
+const styles = StyleSheet.create({
+  container: {flex: 1}
+});

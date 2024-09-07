@@ -11,6 +11,7 @@ import {
   setUserId,
   setUserType,
   setVehicle,
+  setDLNumber,
 } from '../../utils/storage';
 import {colors} from '../../theme/colors';
 
@@ -41,6 +42,7 @@ const Login = ({navigation}) => {
             navigation.replace(screens.MAIN);
           } else {
             setVehicle(response.data.vehicle_id);
+            setDLNumber(response.data.dl_number);
             navigation.replace(screens.MAIN_DRIVER);
           }
         }
@@ -53,7 +55,7 @@ const Login = ({navigation}) => {
   return (
     <Background>
       <View style={styles.container}>
-        <View style={{flexDirection: 'row'}}>
+        {/* <View style={{flexDirection: 'row'}}>
           <TouchableOpacity
             style={{
               width: '30%',
@@ -94,10 +96,10 @@ const Login = ({navigation}) => {
               DRIVER
             </Text>
           </TouchableOpacity>
-        </View>
+        </View> */}
         <Input
-          label="Email"
-          placeholder="Enter your email"
+          label="Email / Vehicle Number"
+          placeholder="Enter your email or vehicle number"
           value={email}
           onChangeText={setEmail}
         />

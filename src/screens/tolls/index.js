@@ -2,13 +2,14 @@ import {FlatList, StyleSheet, Text, TouchableOpacity, View} from 'react-native';
 import React, {useState, useEffect} from 'react';
 import {useIsFocused} from '@react-navigation/native';
 import Background from '../../components/Background';
-import DropDownPicker from 'react-native-dropdown-picker';
+import {Dropdown} from 'react-native-element-dropdown';
 import {colors} from '../../theme/colors';
 import Button from '../../components/Button';
 import Input from '../../components/Input';
 import {getVehicles} from '../../api';
 import {getTollList} from '../../api/tolls';
 import moment from 'moment';
+import DateTimeField from '../../components/DateTimeField';
 
 const Toll = ({navigation}) => {
   const [vehicleOpen, setVehicleOpen] = useState(false);
@@ -65,20 +66,32 @@ const Toll = ({navigation}) => {
           }}>
           Vehicle
         </Text>
-        <DropDownPicker
-          open={vehicleOpen}
+
+        <Dropdown
+          style={{
+            height: 50,
+            borderColor: colors.lightGrey,
+            borderWidth: 0.5,
+            borderRadius: 8,
+            paddingHorizontal: 8,
+            marginTop: 10,
+          }}
+          maxHeight={300}
+          labelField="label"
+          valueField="value"
+          searchPlaceholder="Search..."
+          search
           value={vehicle}
-          items={vehicleList}
-          setOpen={setVehicleOpen}
-          setValue={setVehicle}
-          style={{marginTop: 10}}
+          data={vehicleList}
+          onChange={item => {
+            setVehicle(item.value);
+          }}
         />
 
-        <Input
-          label="Tracking Date (yyyy-mm-dd)"
-          placeholder="Enter date in yyyy-mm-dd format"
-          value={trackingTime}
-          onChangeText={setTrackingTime}
+        <DateTimeField
+          label={'Tracking Date'}
+          placeholder={'Select Date'}
+          onChange={setTrackingTime}
         />
 
         <Button

@@ -1,13 +1,14 @@
-import {StyleSheet, Text, View} from 'react-native';
+import {Alert, ScrollView, StyleSheet, Text, View} from 'react-native';
 import React, {useState, useEffect} from 'react';
 import {useIsFocused} from '@react-navigation/native';
 import Background from '../../components/Background';
-import DropDownPicker from 'react-native-dropdown-picker';
 import {colors} from '../../theme/colors';
 import Button from '../../components/Button';
 import Input from '../../components/Input';
 import {screens} from '../../constants';
 import {getVehicles} from '../../api';
+import {Dropdown} from 'react-native-element-dropdown';
+import DateTimeField from '../../components/DateTimeField';
 
 const ConfigureReport = ({navigation}) => {
   const [vehicleOpen, setVehicleOpen] = useState(false);
@@ -43,66 +44,111 @@ const ConfigureReport = ({navigation}) => {
   };
 
   const showReport = () => {
-    navigation.navigate(screens.CONFIGURED_REPORT_DETAILS, {
-      vehicleId: '66a5612066fb2',
-      copyVehicleId: copyVehicle,
-      date: date,
-      time: trackingTime,
+    Alert.alert('Alert', 'Are you sure want to create a duplicate bill?', [
+      {
+        text: 'YES',
+        onPress: () => {
+          navigation.navigate(screens.CONFIGURED_REPORT_DETAILS, {
+            vehicleId: vehicle,
+            copyVehicleId: copyVehicle,
+            date: date,
+            time: trackingTime,
+          });
+        },
+      },
+      {
+        text: 'CANCEL',
+        onPress: () => console.log('cancel'),
+      },
+    ], {
+      cancelable: true,
     });
   };
 
   return (
     <Background loading={isLoading}>
-      <View style={{flex: 1, padding: 10, paddingHorizontal: 15}}>
-        <Text
-          style={{
-            fontSize: 14,
-            color: colors.text,
-          }}>
-          Vehicle
-        </Text>
-        <DropDownPicker
-          open={vehicleOpen}
-          value={vehicle}
-          items={vehicleList}
-          setOpen={setVehicleOpen}
-          setValue={setVehicle}
-          style={{marginTop: 10}}
-        />
+      <ScrollView>
+        <View style={{flex: 1, padding: 10, paddingHorizontal: 15}}>
+          <Text
+            style={{
+              fontSize: 14,
+              color: colors.text,
+            }}>
+            Vehicle
+          </Text>
 
-        <Text
-          style={{
-            fontSize: 14,
-            color: colors.text,
-            marginTop: 10
-          }}>
-          Copy Vehicle
-        </Text>
-        <DropDownPicker
-          open={copyVehicleOpen}
-          value={copyVehicle}
-          items={vehicleList}
-          setOpen={setCopyVehicleOpen}
-          setValue={setCopyVehicle}
-          style={{marginTop: 10}}
-        />
+          <Dropdown
+            style={{
+              height: 50,
+              borderColor: colors.lightGrey,
+              borderWidth: 0.5,
+              borderRadius: 8,
+              paddingHorizontal: 8,
+              marginTop: 10,
+            }}
+            maxHeight={300}
+            labelField="label"
+            valueField="value"
+            searchPlaceholder="Search..."
+            search
+            value={vehicle}
+            data={vehicleList}
+            onChange={item => {
+              setVehicle(item.value);
+            }}
+          />
 
-        <Input
-          label="Tracking Date (yyyy-mm-dd)"
-          placeholder="Enter date in yyyy-mm-dd format"
-          value={date}
-          onChangeText={setDate}
-        />
+          <Text
+            style={{
+              fontSize: 14,
+              color: colors.text,
+              marginTop: 10,
+            }}>
+            Copy Vehicle
+          </Text>
 
-        <Input
-          label="Time Difference (minutes)"
-          placeholder="Enter time difference between locations"
-          value={trackingTime}
-          onChangeText={setTrackingTime}
-        />
+          <Dropdown
+            style={{
+              height: 50,
+              borderColor: colors.lightGrey,
+              borderWidth: 0.5,
+              borderRadius: 8,
+              paddingHorizontal: 8,
+              marginTop: 10,
+            }}
+            maxHeight={300}
+            labelField="label"
+            valueField="value"
+            searchPlaceholder="Search..."
+            search
+            value={copyVehicle}
+            data={vehicleList}
+            onChange={item => {
+              setCopyVehicle(item.value);
+            }}
+          />
 
-        <Button style={{marginTop: 40}} title={'SUBMIT'} onPress={showReport} />
-      </View>
+          <DateTimeField
+            label={'Tracking Date'}
+            placeholder={'Select Date'}
+            onChange={setDate}
+          />
+
+          <Input
+            label="Time Difference (minutes)"
+            placeholder="Enter time difference between locations"
+            value={trackingTime}
+            isNumber
+            onChangeText={setTrackingTime}
+          />
+
+          <Button
+            style={{marginTop: 40}}
+            title={'SUBMIT'}
+            onPress={showReport}
+          />
+        </View>
+      </ScrollView>
     </Background>
   );
 };

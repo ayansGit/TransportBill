@@ -5,7 +5,7 @@ export const TRACKING_STATUS = {
   START: 'start',
   RUNNING: 'running',
   TOLL: 'toll',
-  STOPAGE: 'stopage',
+  STOPAGE: 'Stopage',
   END: 'end',
 };
 

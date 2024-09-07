@@ -1,0 +1,86 @@
+.containertoll {
+    padding: 10px;
+    width: 400px;
+  }
+  *{
+    padding-bottom: 0px;
+    margin-bottom: 0px;
+    font-family: "Roboto", sans-serif;
+  }
+  
+
+  .wrap1Text {
+    font-weight: bold;
+    color: #000;
+    font-size: 16px;
+    text-align: center;
+    margin-bottom: 8px;
+  }
+  
+  .wrap2 {
+    border: 1px dotted #000;
+    margin-top: 20px;
+    position: relative;
+  }
+  
+  .s {
+    position: absolute;
+    right: 70px;
+    bottom: 120px;
+    font-size: 60px;
+    font-weight: bold;
+    color: #333;
+  }
+  
+  .wrap2Head {
+    display: flex;
+    justify-content: space-between;
+    border-bottom: 1px dashed grey;
+    margin: 10px;
+    padding-top: 10px;
+    padding-bottom: 10px;
+  }
+  
+  .wrap2HeadText {
+    color: #666;
+    font-size: 16px;
+    padding-bottom: 8px;
+    font-weight: 600;
+  }
+  
+  .wrap2body {
+    padding: 10px;
+  }
+  
+  .tablehead {
+    display: flex;
+    flex-direction: row;
+  }
+  
+  .tableheadData1 {
+    width: 40%;
+    color: #000000;
+    font-weight: 400;
+    font-size: 15px;
+    margin-bottom: 10px;
+  }
+  
+  .tableheadData2 {
+    width: 60%;
+    color: #000;
+    font-weight: 900;
+    font-size: 16px;
+    /* margin-bottom: 4px; */
+  }
+  
+  .wrap3 {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 10px;
+  }
+  
+  .wrap3Text {
+    color: #000;
+    font-size: 17px;
+  }

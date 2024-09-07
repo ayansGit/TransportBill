@@ -1,19 +1,23 @@
-import {StyleSheet, Text, View, PermissionsAndroid} from 'react-native';
+import {StyleSheet, Text, View, PermissionsAndroid, Alert} from 'react-native';
 import React, {useEffect, useState, useRef} from 'react';
 import Background from '../../components/Background';
 import {useIsFocused} from '@react-navigation/native';
-import DropDownPicker from 'react-native-dropdown-picker';
 import {colors} from '../../theme/colors';
 import Button from '../../components/Button';
 import Geolocation from 'react-native-geolocation-service';
-import ReactNativeForegroundService from '@supersami/rn-foreground-service';
+import BackgroundJob from 'react-native-background-actions';
 import AddTollModal from './AddTollModal';
 import {
   getCurrentAddress,
   postTracking,
   updateTracking,
 } from '../../api/tracking';
-import {clearStorage, getUserId, getVehicles} from '../../utils/storage';
+import {
+  clearStorage,
+  getDLNumber,
+  getUserId,
+  getVehicles,
+} from '../../utils/storage';
 import {screens} from '../../constants';
 import {useTimer} from './hooks/useTimer';
 import moment from 'moment';
@@ -27,16 +31,20 @@ import {
   getFromTime,
   getToTime,
   setFromTime,
+  setReportId,
   getReportId,
 } from '../../utils/tracking';
 import {getDateTimeForSeconds} from './utils';
+import {useNetInfo} from '@react-native-community/netinfo';
 
 const Tracking = ({navigation}) => {
+  const netInfo = useNetInfo();
   let watchId = null;
   const trackingIntervalRef = useRef(null);
   const isFocused = useIsFocused();
   const [open, setOpen] = useState(false);
   const [vehicle, setVehicle] = useState(null);
+  const [dlNumber, setDLNumber] = useState(null);
   const [items, setItems] = useState([
     {label: 'WB1234', value: '123'},
     {label: 'HP1234', value: '456'},
@@ -47,23 +55,41 @@ const Tracking = ({navigation}) => {
   const [journeyStatus, setJourneyStatus] = useState(TRACKING_STATUS.START);
   const [tollTax, setTollTax] = useState('');
   const [fromLocation, setFromLocationData] = useState('');
-  const [reportId, setReportId] = useState('');
 
-  const {time, startTimer, stopTimer, getTime} = useTimer();
+  const {time, startTimer, stopTimer, getTime, startBackgroundTimer} =
+    useTimer();
+
+  const options = {
+    taskName: 'Transport Bill',
+    taskTitle: 'Tracking',
+    taskDesc: 'Tracking started',
+    taskIcon: {
+      name: 'ic_launcher',
+      type: 'mipmap',
+      package: 'com.transportbill',
+    },
+    color: colors.main,
+    linkingURI: 'com.transportBill://',
+    parameters: {
+      delay: 20000,
+    },
+  };
+
+  // useEffect(() => {
+  //   if (isFocused) {
+  //     setTrackingTime(time);
+  //   }
+  // }, [time]);
 
   useEffect(() => {
-    setTrackingTime(time);
-  }, [time]);
-
-  useEffect(() => {
-    getVehicle();
+    initialize();
     requestLocationPermission();
-    setTrackingStatus(TRACKING_STATUS.START);
+    if (!BackgroundJob.isRunning()) setTrackingStatus(TRACKING_STATUS.START);
     return () => {
-      Geolocation.stopObserving();
-      Geolocation.clearWatch(watchId);
-      setTollTax('');
-      setTrackingStatus(TRACKING_STATUS.START);
+      if (!BackgroundJob.isRunning()) {
+        setTollTax('');
+        setTrackingStatus(TRACKING_STATUS.START);
+      }
     };
   }, [isFocused, navigation]);
 
@@ -76,14 +102,30 @@ const Tracking = ({navigation}) => {
     }
   }, [journeyStatus]);
 
-  const getVehicle = async () => {
+  const initialize = async () => {
     try {
       const vehicleId = await getVehicles();
+      const dlNumber = await getDLNumber();
+      const fromLocation = await getFromLocation();
+      const status = await getTrackingStatus();
       console.log('vehicleID', vehicleId);
+      console.log('dlNumber', dlNumber);
+      console.log('fromLocation', fromLocation);
+      console.log('status', status);
       setVehicle(vehicleId);
+      setDLNumber(dlNumber);
+      setFromLocationData(fromLocation);
+      setJourneyStatus(status);
     } catch (error) {
       console.warn(error);
     }
+  };
+
+  const updateViews = async () => {
+    const location = await getFromLocation();
+    const status = await getTrackingStatus();
+    setFromLocationData(location);
+    setJourneyStatus(status);
   };
 
   const requestLocationPermission = async () => {
@@ -123,28 +165,6 @@ const Tracking = ({navigation}) => {
     }
   };
 
-  const updateForeground = () => {
-    ReactNativeForegroundService.add_task(() => startTracking(), {
-      delay: 5000,
-      onLoop: true,
-      taskId: 'taskid',
-      onError: e => console.log(`Error logging:`, e),
-    });
-  };
-
-  const Notification = () => {
-    ReactNativeForegroundService.start({
-      id: 1244,
-      title: 'Location Tracking',
-      message: 'Location Tracking',
-      icon: 'ic_launcher',
-      button: false,
-      button2: false,
-      setOnlyAlertOnce: true,
-      color: '#000000',
-    });
-  };
-
   const startTracking = async () => {
     watchId = Geolocation.watchPosition(
       async position => {
@@ -154,6 +174,7 @@ const Tracking = ({navigation}) => {
         console.warn('LAT LONG :', Platform.OS, x, ' Speed: ', speed);
         const trackingStatus = await getTrackingStatus();
         if (trackingStatus === TRACKING_STATUS.START) {
+          console.log('setTrackingLocation 1');
           setTrackingLocation(
             trackingStatus,
             position.coords.latitude,
@@ -166,6 +187,7 @@ const Tracking = ({navigation}) => {
           trackingStatus !== TRACKING_STATUS.STOPAGE &&
           trackingStatus !== TRACKING_STATUS.TOLL
         ) {
+          console.log('setTrackingLocation 12');
           setJourneyStatus(TRACKING_STATUS.STOPAGE);
           setTrackingStatus(TRACKING_STATUS.STOPAGE);
           setTrackingLocation(
@@ -176,14 +198,17 @@ const Tracking = ({navigation}) => {
             null,
           );
         } else if (speed !== 0 && trackingStatus === TRACKING_STATUS.TOLL) {
+          console.log('setTrackingLocation 123');
           setJourneyStatus(TRACKING_STATUS.RUNNING);
           setTrackingStatus(TRACKING_STATUS.RUNNING);
           updateTrackingLocation(trackingStatus);
         } else if (speed !== 0 && trackingStatus === TRACKING_STATUS.STOPAGE) {
+          console.log('setTrackingLocation 1234');
           setJourneyStatus(TRACKING_STATUS.RUNNING);
           setTrackingStatus(TRACKING_STATUS.RUNNING);
           updateTrackingLocation(trackingStatus);
         } else if (speed !== 0) {
+          console.log('setTrackingLocation 12345');
           setTrackingLocation(
             trackingStatus ? trackingStatus : journeyStatus,
             position.coords.latitude,
@@ -197,27 +222,50 @@ const Tracking = ({navigation}) => {
         console.log('maperror in getting location', error.code, error.message);
       },
       {
+        accuracy: {
+          android: 'high',
+          ios: 'bestForNavigation',
+        },
         enableHighAccuracy: true,
         distanceFilter: 0,
         interval: 20000,
+        fastestInterval: 20000,
         showsBackgroundLocationIndicator: true,
       },
     );
   };
 
-  const onJourneyStart = () => {
+  const onJourneyStart = async () => {
+    if (!dlNumber) {
+      Alert.alert(
+        'Alert',
+        'Cannot start tracking. No Driver is assigned to this vehicle',
+      );
+      return;
+    }
     setIsJourneyStarted(true);
-    // updateForeground();
-    // Notification();
-    startTimer();
+    // startTimer();
     startTracking();
+    try {
+      await BackgroundJob.start(startBackgroundTimer, options);
+      await BackgroundJob.updateNotification({
+        taskDesc: `Tracking started..`,
+      });
+    } catch (error) {
+      console.warn(error);
+    }
   };
 
-  const onJourneyEnd = () => {
+  const onJourneyEnd = async () => {
     stopTimer();
     setIsJourneyStarted(false);
-    ReactNativeForegroundService.remove_task('taskid');
     Geolocation.stopObserving();
+    Geolocation.clearWatch(watchId);
+    try {
+      await BackgroundJob.stop();
+    } catch (error) {
+      console.warn(error);
+    }
     setTollTax('');
     setJourneyStatus(TRACKING_STATUS.END);
   };
@@ -256,6 +304,9 @@ const Tracking = ({navigation}) => {
   };
 
   const setTrackingLocation = async (status, lat, long, speed, toll) => {
+    if (!netInfo.isConnected || !netInfo.isInternetReachable) {
+      return;
+    }
     try {
       let userId = await getUserId();
       let address = await getCurrentAddress(lat, long);
@@ -288,23 +339,31 @@ const Tracking = ({navigation}) => {
         console.warn(response?.message?.join('\n'));
         return;
       }
+      console.log('BackgroundJob running:: ', BackgroundJob.isRunning());
+      if (BackgroundJob.isRunning())
+        await BackgroundJob.updateNotification({
+          taskDesc: `Current Location : ${address.data.currentAddress} | Speed : + ${speed} m/s`,
+        });
 
       setFromLocation(address.data.currentAddress);
       setFromLocationData(address.data.currentAddress);
       setFromTime(time);
-
+      console.log('STATUS::: ', status);
       if (status === TRACKING_STATUS.STOPAGE) {
+        console.log('STATUS STOPAGE::: ', status);
         setReportId(response?.data?.report_id);
+        updateViews();
         return;
       }
       if (journeyStatus !== TRACKING_STATUS.END) {
-        setJourneyStatus(TRACKING_STATUS.RUNNING);
+        // setJourneyStatus(TRACKING_STATUS.RUNNING);
         setTrackingStatus(TRACKING_STATUS.RUNNING);
       }
       if (journeyStatus === TRACKING_STATUS.END) {
-        setJourneyStatus(TRACKING_STATUS.START);
+        // setJourneyStatus(TRACKING_STATUS.START);
         setTrackingStatus(TRACKING_STATUS.START);
       }
+      updateViews();
     } catch (error) {
       onJourneyEnd();
       console.error(error?.message);
@@ -337,8 +396,8 @@ const Tracking = ({navigation}) => {
   };
 
   const logout = async () => {
-    ReactNativeForegroundService.remove_task('taskid');
     Geolocation.stopObserving();
+    Geolocation.clearWatch(watchId);
     await clearStorage();
     navigation.replace(screens.AUTH);
   };
@@ -346,24 +405,6 @@ const Tracking = ({navigation}) => {
   return (
     <Background>
       <View style={{flex: 1, padding: 10, paddingHorizontal: 15}}>
-        {/* <Text
-          style={{
-            fontSize: 14,
-            color: colors.text,
-          }}>
-          Vehicle
-        </Text>
-        <DropDownPicker
-          open={open}
-          value={vehicle}
-          items={items}
-          setOpen={setOpen}
-          setValue={setVehicle}
-          // setItems={setItems}
-          style={{marginTop: 10}}
-          disabled={isJourneyStarted}
-        /> */}
-
         <View
           style={{
             flexDirection: 'row',
@@ -407,7 +448,7 @@ const Tracking = ({navigation}) => {
           </View>
         </View>
 
-        {!isJourneyStarted && (
+        {!BackgroundJob.isRunning() && !isJourneyStarted && (
           <Button
             title={'START'}
             isLoading={isLoading}
@@ -415,7 +456,7 @@ const Tracking = ({navigation}) => {
           />
         )}
 
-        {isJourneyStarted && (
+        {(BackgroundJob.isRunning() || isJourneyStarted) && (
           <Button
             title={'ADD TOLL'}
             isLoading={isLoading}
@@ -423,11 +464,13 @@ const Tracking = ({navigation}) => {
           />
         )}
 
-        {isJourneyStarted && (
+        {(BackgroundJob.isRunning() || isJourneyStarted) && (
           <Button title={'END'} isLoading={isLoading} onPress={onJourneyEnd} />
         )}
 
-        <Button title={'LOGOUT'} onPress={logout} />
+        {!BackgroundJob.isRunning() && (
+          <Button title={'LOGOUT'} onPress={logout} />
+        )}
 
         <AddTollModal
           visible={isShowTollModal}

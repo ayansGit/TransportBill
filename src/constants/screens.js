@@ -13,4 +13,7 @@ export const screens = {
   REPORTS: 'Reports',
   REPORT_DETAILS: 'Report Details',
   CONFIGURED_REPORT_DETAILS: 'Configured Report Details',
+  UPDATE_BILL: 'Update Toll',
+  PREVIE_BILL: 'Preview Bill',
+
 };

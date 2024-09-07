@@ -11,7 +11,7 @@ const ReportList = ({data = [], onItemSelected}) => {
           return (
             <ReportItem
               vehicleNumber={item?.vehicle_name}
-              time={item?.time}
+              time={item?.total_time}
               fromLocation={item?.from_location_name}
               toLocation={item?.to_location_name}
               status={item?.status}

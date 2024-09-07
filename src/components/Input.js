@@ -1,18 +1,23 @@
 import {View, Text, TextInput, TouchableOpacity} from 'react-native';
 import React from 'react';
 import {colors} from '../theme/colors';
+import {Icons} from '../assets';
 
 const Input = ({
   width = '100%',
   height = 40,
   placeholder = 'Input',
-  label = 'Input',
+  label = '',
   marginTop = 20,
+  marginBottom = 0,
+  marginHorizontal = 0,
+  style,
   countryCode = '+91',
   isPhone = false,
   isEmail = false,
   isPassword = false,
   isNumber = false,
+  search = false,
   multiline = false,
   maxLength = null,
   value,
@@ -25,7 +30,16 @@ const Input = ({
   };
 
   return (
-    <View style={{width: width, marginTop: marginTop}}>
+    <View
+      style={[
+        {
+          width: width,
+          marginTop: marginTop,
+          marginBottom: marginBottom,
+          marginHorizontal: marginHorizontal,
+        },
+        {...style},
+      ]}>
       {islableShown && (
         <Text
           style={{
@@ -99,6 +113,8 @@ const Input = ({
           onChangeText={onTextChange}
           maxLength={isPhone ? 10 : maxLength}
         />
+
+        {search && <Icons.Search color={colors.lightGrey} marginRight={10} />}
       </View>
     </View>
   );

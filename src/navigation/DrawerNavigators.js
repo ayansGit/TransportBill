@@ -19,7 +19,7 @@ export default DrawerNavigator = () => {
         headerTintColor: colors.white,
       }}>
       <Drawer.Screen name="Vehicles" component={Vehicles} />
-      <Drawer.Screen name="Drivers" component={Drivers} />
+      {/* <Drawer.Screen name="Drivers" component={Drivers} /> */}
       <Drawer.Screen name="Reports" component={ViewReport} />
       <Drawer.Screen name="Configure Reports" component={ConfigureReport} />
       <Drawer.Screen name="Toll" component={Toll} />
