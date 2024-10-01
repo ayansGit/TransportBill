@@ -116,3 +116,21 @@ export const getReportId = async () => {
   }
   return '';
 };
+
+export const setTripId = async value => {
+  try {
+    await AsyncStorage.setItem('transportbill.trip.id', value);
+  } catch (error) {
+    console.log(error);
+  }
+};
+
+export const getTripId = async () => {
+  try {
+    let value = await AsyncStorage.getItem('transportbill.trip.id');
+    return value;
+  } catch (error) {
+    console.log(error);
+  }
+  return null;
+};

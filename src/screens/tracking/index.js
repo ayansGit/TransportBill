@@ -33,6 +33,8 @@ import {
   setFromTime,
   setReportId,
   getReportId,
+  getTripId,
+  setTripId,
 } from '../../utils/tracking';
 import {getDateTimeForSeconds} from './utils';
 import {useNetInfo} from '@react-native-community/netinfo';
@@ -75,15 +77,10 @@ const Tracking = ({navigation}) => {
     },
   };
 
-  // useEffect(() => {
-  //   if (isFocused) {
-  //     setTrackingTime(time);
-  //   }
-  // }, [time]);
-
   useEffect(() => {
     initialize();
     requestLocationPermission();
+    requestNotificationPermission();
     if (!BackgroundJob.isRunning()) setTrackingStatus(TRACKING_STATUS.START);
     return () => {
       if (!BackgroundJob.isRunning()) {
@@ -162,6 +159,33 @@ const Tracking = ({navigation}) => {
       }
     } catch (err) {
       console.log('requestLocationPermission', err);
+    }
+  };
+
+  const requestNotificationPermission = async () => {
+    if(Platform.OS ==="android"){
+      try {
+        PermissionsAndroid.check('android.permission.POST_NOTIFICATIONS').then(
+          response => {
+            if(!response){
+              PermissionsAndroid.request('android.permission.POST_NOTIFICATIONS',{
+                  title: 'Notification',
+                  message:
+                    'App needs access to your notification ' +
+                    'to track your vehicle',
+                  buttonNegative: 'Cancel',
+                  buttonPositive: 'OK',
+              })
+            }
+          }
+        ).catch(
+          err => {
+            console.log("Notification Error=====>",err);
+          }
+        )
+      } catch (err){
+        console.log(err);
+      }
     }
   };
 
@@ -309,6 +333,7 @@ const Tracking = ({navigation}) => {
     }
     try {
       let userId = await getUserId();
+      let tripId = await getTripId();
       let address = await getCurrentAddress(lat, long);
       const time = await getTime();
       const fromLocation = await getFromLocation();
@@ -333,6 +358,7 @@ const Tracking = ({navigation}) => {
         fromLocation ? fromLocation : address.data.currentAddress,
         toll,
         address.data.currentAddress,
+        tripId,
       );
       if (!response.success) {
         onJourneyEnd();
@@ -344,7 +370,7 @@ const Tracking = ({navigation}) => {
         await BackgroundJob.updateNotification({
           taskDesc: `Current Location : ${address.data.currentAddress} | Speed : + ${speed} m/s`,
         });
-
+      setTripId(response?.data?.trip_id);
       setFromLocation(address.data.currentAddress);
       setFromLocationData(address.data.currentAddress);
       setFromTime(time);

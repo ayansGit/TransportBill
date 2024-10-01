@@ -22,6 +22,7 @@ export const postTracking = async (
   from_location,
   toll_tax,
   toll_address,
+  trip_id,
 ) => {
   let request = {
     status: status,
@@ -38,6 +39,7 @@ export const postTracking = async (
     to_location_name: location_name,
     from_time: from_time,
     to_time: to_time,
+    trip_id: trip_id,
     toll: toll_tax
       ? {
           address: toll_address,
