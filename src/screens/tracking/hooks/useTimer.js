@@ -19,34 +19,32 @@ export const useTimer = () => {
       let timeInSecond = Math.floor((Date.now() - startTimeRef.current) / 1000);
       timeCount = timeInSecond;
       //   setTimeCount(timeInSecond);
-      console.log('TIMER RUNNING::', timeInSecond);
       setTime(getDateTimeForSeconds(timeInSecond));
       setTrackingTime(getDateTimeForSeconds(timeInSecond));
     }, 1000);
     setRunning(true);
   }, [startTimeRef, intervalRef]);
 
-  const startBackgroundTimer = async () => {
-    startTimeRef.current = Date.now() - timeCount * 1000;
+  const startBackgroundTimer = async (timeDifference = 0) => {
+    const timeDiff = timeDifference === NaN ? 0: timeDifference;
+    startTimeRef.current = Date.now() - (timeCount + timeDiff) * 1000;
     await new Promise(async resolve => {
       for (let i = 0; BackgroundJob.isRunning(); i++) {
         let timeInSecond = Math.floor(
           (Date.now() - startTimeRef.current) / 1000,
         );
         timeCount = timeInSecond;
-        console.log('BACKGROUND TIMER RUNNING::', timeInSecond);
-        setTime(getDateTimeForSeconds(timeInSecond));
-        setTrackingTime(getDateTimeForSeconds(timeInSecond));
+        const dateTimeForSecond = getDateTimeForSeconds(timeInSecond);
+        setTime(dateTimeForSecond);
+        setTrackingTime(dateTimeForSecond);
         await sleep(1000);
       }
     });
   };
 
   const stopTimer = useCallback(() => {
-    console.log('STOP TIMER');
     clearInterval(intervalRef.current);
     // setTimeCount(0);
-
     timeCount = 0;
     setTime(getDateTimeForSeconds(0));
     setTrackingTime(getDateTimeForSeconds(0));

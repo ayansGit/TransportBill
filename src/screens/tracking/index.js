@@ -1,7 +1,7 @@
 import {StyleSheet, Text, View, PermissionsAndroid, Alert} from 'react-native';
-import React, {useEffect, useState, useRef} from 'react';
+import React, {useEffect, useState, useRef, useCallback} from 'react';
 import Background from '../../components/Background';
-import {useIsFocused} from '@react-navigation/native';
+import {useIsFocused, useFocusEffect} from '@react-navigation/native';
 import {colors} from '../../theme/colors';
 import Button from '../../components/Button';
 import Geolocation from 'react-native-geolocation-service';
@@ -9,6 +9,7 @@ import BackgroundJob from 'react-native-background-actions';
 import AddTollModal from './AddTollModal';
 import {
   getCurrentAddress,
+  getLastStatus,
   postTracking,
   updateTracking,
 } from '../../api/tracking';
@@ -77,10 +78,15 @@ const Tracking = ({navigation}) => {
     },
   };
 
+  // useFocusEffect(
+  //   useCallback(() => {
+  //     requestNotificationPermission();
+  //   }, [requestNotificationPermission]),
+  // );
+
   useEffect(() => {
     initialize();
     requestLocationPermission();
-    requestNotificationPermission();
     if (!BackgroundJob.isRunning()) setTrackingStatus(TRACKING_STATUS.START);
     return () => {
       if (!BackgroundJob.isRunning()) {
@@ -105,10 +111,7 @@ const Tracking = ({navigation}) => {
       const dlNumber = await getDLNumber();
       const fromLocation = await getFromLocation();
       const status = await getTrackingStatus();
-      console.log('vehicleID', vehicleId);
-      console.log('dlNumber', dlNumber);
-      console.log('fromLocation', fromLocation);
-      console.log('status', status);
+      getLastTrackingStatus();
       setVehicle(vehicleId);
       setDLNumber(dlNumber);
       setFromLocationData(fromLocation);
@@ -123,6 +126,32 @@ const Tracking = ({navigation}) => {
     const status = await getTrackingStatus();
     setFromLocationData(location);
     setJourneyStatus(status);
+  };
+
+  const getLastTrackingStatus = async () => {
+    setLoading(true);
+    try {
+      let tripId = await getTripId();
+      if (!tripId) {
+        setLoading(false);
+        return;
+      }
+      const response = await getLastStatus(tripId);
+      if (response?.data) {
+        setJourneyStatus(response?.data?.status);
+        setTrackingStatus(response?.data?.status);
+        setIsJourneyStarted(response?.data?.status !== TRACKING_STATUS.END);
+        if (!BackgroundJob.isRunning()) {
+          const timeDifference = moment.duration(
+            moment(new Date()).diff(moment(new Date(response.data.date_time))),
+          );
+          onJourneyStart(timeDifference.asSeconds());
+        }
+      }
+    } catch (error) {
+      console.log(error);
+    }
+    setLoading(false);
   };
 
   const requestLocationPermission = async () => {
@@ -157,34 +186,40 @@ const Tracking = ({navigation}) => {
       } else {
         console.log('Background location permission denied');
       }
+
+      await requestNotificationPermission();
     } catch (err) {
       console.log('requestLocationPermission', err);
     }
   };
 
   const requestNotificationPermission = async () => {
-    if(Platform.OS ==="android"){
+    if (Platform.OS === 'android') {
       try {
-        PermissionsAndroid.check('android.permission.POST_NOTIFICATIONS').then(
-          response => {
-            if(!response){
-              PermissionsAndroid.request('android.permission.POST_NOTIFICATIONS',{
-                  title: 'Notification',
-                  message:
-                    'App needs access to your notification ' +
-                    'to track your vehicle',
-                  buttonNegative: 'Cancel',
-                  buttonPositive: 'OK',
-              })
-            }
+        const notificationPermCheck = await PermissionsAndroid.check(
+          'android.permission.POST_NOTIFICATIONS',
+        );
+        if (!notificationPermCheck) {
+          const notificationPerm = await PermissionsAndroid.request(
+            'android.permission.POST_NOTIFICATIONS',
+            {
+              title: 'Notification',
+              message:
+                'App needs access to your notification ' +
+                'to track your vehicle',
+              buttonNegative: 'Cancel',
+              buttonPositive: 'OK',
+            },
+          );
+
+          if (notificationPerm === PermissionsAndroid.RESULTS.GRANTED) {
+            console.log('Notification permission granted');
+          } else {
+            console.log('Notification permission denied');
           }
-        ).catch(
-          err => {
-            console.log("Notification Error=====>",err);
-          }
-        )
-      } catch (err){
-        console.log(err);
+        }
+      } catch (err) {
+        console.log('Notification Error=====>', err);
       }
     }
   };
@@ -195,10 +230,9 @@ const Tracking = ({navigation}) => {
         let x = [position.coords.longitude, position.coords.latitude];
         var speed =
           position.coords.speed < 0 ? 0 : Math.round(position.coords.speed);
-        console.warn('LAT LONG :', Platform.OS, x, ' Speed: ', speed);
+        // console.warn('LAT LONG :', Platform.OS, x, ' Speed: ', speed);
         const trackingStatus = await getTrackingStatus();
         if (trackingStatus === TRACKING_STATUS.START) {
-          console.log('setTrackingLocation 1');
           setTrackingLocation(
             trackingStatus,
             position.coords.latitude,
@@ -211,7 +245,6 @@ const Tracking = ({navigation}) => {
           trackingStatus !== TRACKING_STATUS.STOPAGE &&
           trackingStatus !== TRACKING_STATUS.TOLL
         ) {
-          console.log('setTrackingLocation 12');
           setJourneyStatus(TRACKING_STATUS.STOPAGE);
           setTrackingStatus(TRACKING_STATUS.STOPAGE);
           setTrackingLocation(
@@ -222,17 +255,14 @@ const Tracking = ({navigation}) => {
             null,
           );
         } else if (speed !== 0 && trackingStatus === TRACKING_STATUS.TOLL) {
-          console.log('setTrackingLocation 123');
           setJourneyStatus(TRACKING_STATUS.RUNNING);
           setTrackingStatus(TRACKING_STATUS.RUNNING);
           updateTrackingLocation(trackingStatus);
         } else if (speed !== 0 && trackingStatus === TRACKING_STATUS.STOPAGE) {
-          console.log('setTrackingLocation 1234');
           setJourneyStatus(TRACKING_STATUS.RUNNING);
           setTrackingStatus(TRACKING_STATUS.RUNNING);
           updateTrackingLocation(trackingStatus);
         } else if (speed !== 0) {
-          console.log('setTrackingLocation 12345');
           setTrackingLocation(
             trackingStatus ? trackingStatus : journeyStatus,
             position.coords.latitude,
@@ -242,8 +272,12 @@ const Tracking = ({navigation}) => {
           );
         }
       },
-      error => {
-        console.log('maperror in getting location', error.code, error.message);
+      async error => {
+        console.log('Error in getting location', error.code, error.message);
+        if (BackgroundJob.isRunning())
+          await BackgroundJob.updateNotification({
+            taskDesc: `Tracking Error: ${error?.code} :: ${error?.message}`,
+          });
       },
       {
         accuracy: {
@@ -259,7 +293,7 @@ const Tracking = ({navigation}) => {
     );
   };
 
-  const onJourneyStart = async () => {
+  const onJourneyStart = async (timeDifference = 0) => {
     if (!dlNumber) {
       Alert.alert(
         'Alert',
@@ -271,7 +305,10 @@ const Tracking = ({navigation}) => {
     // startTimer();
     startTracking();
     try {
-      await BackgroundJob.start(startBackgroundTimer, options);
+      await BackgroundJob.start(
+        () => startBackgroundTimer(timeDifference),
+        options,
+      );
       await BackgroundJob.updateNotification({
         taskDesc: `Tracking started..`,
       });
@@ -292,6 +329,12 @@ const Tracking = ({navigation}) => {
     }
     setTollTax('');
     setJourneyStatus(TRACKING_STATUS.END);
+    setTrackingTime('');
+    setFromLocation('');
+    setFromTime('');
+    setTollTax('');
+    setTrackingStatus(TRACKING_STATUS.START);
+    // await clearStorage();
   };
 
   const onAddToll = () => {
@@ -322,13 +365,17 @@ const Tracking = ({navigation}) => {
         // setJourneyStatus('running');
       },
       error => {
-        console.error(error.message);
+        console.log(error);
       },
     );
   };
 
   const setTrackingLocation = async (status, lat, long, speed, toll) => {
     if (!netInfo.isConnected || !netInfo.isInternetReachable) {
+      if (BackgroundJob.isRunning())
+        await BackgroundJob.updateNotification({
+          taskDesc: `No internet connection`,
+        });
       return;
     }
     try {
@@ -361,22 +408,19 @@ const Tracking = ({navigation}) => {
         tripId,
       );
       if (!response.success) {
-        onJourneyEnd();
+        // onJourneyEnd();
         console.warn(response?.message?.join('\n'));
         return;
       }
-      console.log('BackgroundJob running:: ', BackgroundJob.isRunning());
       if (BackgroundJob.isRunning())
         await BackgroundJob.updateNotification({
-          taskDesc: `Current Location : ${address.data.currentAddress} | Speed : + ${speed} m/s`,
+          taskDesc: `Current Location: ${address.data.currentAddress}`,
         });
       setTripId(response?.data?.trip_id);
       setFromLocation(address.data.currentAddress);
       setFromLocationData(address.data.currentAddress);
       setFromTime(time);
-      console.log('STATUS::: ', status);
       if (status === TRACKING_STATUS.STOPAGE) {
-        console.log('STATUS STOPAGE::: ', status);
         setReportId(response?.data?.report_id);
         updateViews();
         return;
@@ -391,7 +435,7 @@ const Tracking = ({navigation}) => {
       }
       updateViews();
     } catch (error) {
-      onJourneyEnd();
+      // onJourneyEnd();
       console.error(error?.message);
     }
   };
@@ -419,6 +463,13 @@ const Tracking = ({navigation}) => {
       setTrackingStatus(TRACKING_STATUS.RUNNING);
       setJourneyStatus(TRACKING_STATUS.RUNNING);
     }
+  };
+
+  const handleOnEndJourney = () => {
+    Alert.alert('End Transport', 'Are you sure you want to end your journey', [
+      {text: 'YES', onPress: () => onJourneyEnd()},
+      {text: 'CANCEL', onPress: () => {}},
+    ]);
   };
 
   const logout = async () => {
@@ -478,7 +529,7 @@ const Tracking = ({navigation}) => {
           <Button
             title={'START'}
             isLoading={isLoading}
-            onPress={onJourneyStart}
+            onPress={() => onJourneyStart()}
           />
         )}
 
@@ -491,7 +542,11 @@ const Tracking = ({navigation}) => {
         )}
 
         {(BackgroundJob.isRunning() || isJourneyStarted) && (
-          <Button title={'END'} isLoading={isLoading} onPress={onJourneyEnd} />
+          <Button
+            title={'END'}
+            isLoading={isLoading}
+            onPress={handleOnEndJourney}
+          />
         )}
 
         {!BackgroundJob.isRunning() && (

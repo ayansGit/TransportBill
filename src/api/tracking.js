@@ -95,3 +95,13 @@ export const getCurrentAddress = async (lat, lng) => {
     console.log(error);
   }
 };
+
+export const getLastStatus = async trip_id => {
+  let request = {
+    trip_id: trip_id,
+  };
+  return await postAnyRequest(
+    'https://transportbill.pdttech.in/api/driver/report/latest',
+    request,
+  );
+};
