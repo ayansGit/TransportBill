@@ -114,3 +114,21 @@ export const getDLNumber = async () => {
   }
   return '';
 };
+
+export const setVehicleNumber = async value => {
+  try {
+    await AsyncStorage.setItem('transportbill.vehicle.no', value);
+  } catch (error) {
+    console.log(error);
+  }
+};
+
+export const getVehicleNumber = async () => {
+  try {
+    let value = await AsyncStorage.getItem('transportbill.vehicle.no');
+    return value;
+  } catch (error) {
+    console.log(error);
+  }
+  return '';
+};

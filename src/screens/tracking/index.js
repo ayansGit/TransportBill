@@ -1,4 +1,4 @@
-import {StyleSheet, Text, View, PermissionsAndroid, Alert} from 'react-native';
+import {StyleSheet, Text, View, PermissionsAndroid, Alert, ToastAndroid} from 'react-native';
 import React, {useEffect, useState, useRef, useCallback} from 'react';
 import Background from '../../components/Background';
 import {useIsFocused, useFocusEffect} from '@react-navigation/native';
@@ -17,6 +17,7 @@ import {
   clearStorage,
   getDLNumber,
   getUserId,
+  getVehicleNumber,
   getVehicles,
 } from '../../utils/storage';
 import {screens} from '../../constants';
@@ -39,6 +40,7 @@ import {
 } from '../../utils/tracking';
 import {getDateTimeForSeconds} from './utils';
 import {useNetInfo} from '@react-native-community/netinfo';
+import database from '@react-native-firebase/database';
 
 const Tracking = ({navigation}) => {
   const netInfo = useNetInfo();
@@ -58,7 +60,7 @@ const Tracking = ({navigation}) => {
   const [journeyStatus, setJourneyStatus] = useState(TRACKING_STATUS.START);
   const [tollTax, setTollTax] = useState('');
   const [fromLocation, setFromLocationData] = useState('');
-
+  const firebaseDBRef = database();
   const {time, startTimer, stopTimer, getTime, startBackgroundTimer} =
     useTimer();
 
@@ -386,10 +388,17 @@ const Tracking = ({navigation}) => {
       const fromLocation = await getFromLocation();
       const fromTime = await getFromTime();
       const toTime = await getToTime();
+      const vehicleNumber = await getVehicleNumber();
       var duration = moment.duration(
         moment(new Date(time)).diff(moment(new Date(fromTime))),
       );
       const timeDiff = getDateTimeForSeconds(duration.asSeconds());
+      console.log('location123::', lat, long)
+      ToastAndroid.show(`Lat: ${lat} Long: ${long}`, ToastAndroid.SHORT)
+      await firebaseDBRef.ref(`/${vehicleNumber}`).update({
+        latitude: lat,
+        longitude: long,
+      });
       let response = await postTracking(
         status,
         userId,

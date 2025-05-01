@@ -12,6 +12,7 @@ import {
   setUserType,
   setVehicle,
   setDLNumber,
+  setVehicleNumber,
 } from '../../utils/storage';
 import {colors} from '../../theme/colors';
 
@@ -43,6 +44,7 @@ const Login = ({navigation}) => {
           } else {
             setVehicle(response.data.vehicle_id);
             setDLNumber(response.data.dl_number);
+            setVehicleNumber(email)
             navigation.replace(screens.MAIN_DRIVER);
           }
         }
